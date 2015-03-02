@@ -5,6 +5,7 @@
  * RX is digital pin 10 (connect to TX of esp8266)
  * TX is digital pin 11 (connect to RX of esp8266)
 
+
  */
 #include <SoftwareSerial.h>
 
@@ -20,7 +21,9 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println("Initializing Wifi Controlled Arduino");
+  
   pinMode(dbg, OUTPUT);
+  //Make sure you still set up your output pins here.
 
   // set the data rate for the SoftwareSerial port
   esp.begin(9600);
