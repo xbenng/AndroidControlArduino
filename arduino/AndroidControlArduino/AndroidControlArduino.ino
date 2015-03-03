@@ -34,6 +34,7 @@ void setup()
   delay(10);
   digitalWrite(dbg, LOW);
 
+  Serial.println("setting wireless mode...");
   while (!esp.find("OK")) {
     esp.println("AT+CWMODE=1"); //station only
   }
@@ -41,8 +42,9 @@ void setup()
   delay(10);
   digitalWrite(dbg, LOW);
 
-  esp.println("AT+CWJAP=?");
+  esp.println("AT+CWJAP?");
   if (!esp.find(AP)){
+    Serial.println("connecting to wifi...");
     while (!esp.find("OK")) {
       esp.print("AT+CWJAP=\"");
       esp.print(AP);
@@ -54,7 +56,8 @@ void setup()
   digitalWrite(dbg, HIGH);
   delay(10);
   digitalWrite(dbg, LOW);
-
+  
+  Serial.println("setting connection mode...");
   while (!esp.find("OK")) {
     esp.println("AT+CIPMUX=1");
   }
@@ -62,6 +65,9 @@ void setup()
   delay(10);
   digitalWrite(dbg, LOW);
 
+  Serial.print("setting up server to listen on port ");
+  Serial.print(serverPort);
+  Serial.println("...");
   while (!esp.find("OK")) {
     esp.print("AT+CIPSERVER=1,");
     esp.println(serverPort);  //listen on port
@@ -82,22 +88,25 @@ void loop() // poll for data
       id = esp.parseInt();
       esp.find(":");  //skip length
       
-      Serial.println("got data");
+      Serial.println("got request");
 
       int pinToSwitch = esp.parseInt();
       int state = esp.parseInt();
-      if (state == 0 || state == 1){  //change state
+      if ((state == 0 || state == 1)){  //change state
         Serial.println(pinToSwitch);
         Serial.println(state);
         digitalWrite(pinToSwitch,state);
       } else {  //tell state
-        while(!esp.find(">")){
+        //Serial.println("sending state");
+        int c = 1;
+        while(!esp.find(">") && c++ < 5){
            //wait until esp is ready to send
-           esp.print(AT+CIPSEND=);
+           esp.print("AT+CIPSEND=");
            esp.print(id);
-           esp.print(",1");
+           esp.println(",1");
         }
-        esp.print(digitalRead(pinToSwitch));  //send state
+        //Serial.println(digitalRead(pinToSwitch)); 
+        esp.println(digitalRead(pinToSwitch));  //send state
       }
 
       //esp.println("AT+CIPCLOSE=");

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Android Control Arduino</string>
 
-    <string name="defaultip">172.16.1.111</string>
+    <string name="defaultip">172.16.3.111</string>
     <string name="defaultport">20000</string>
     <string name="action_settings">Settings</string>
 </resources>

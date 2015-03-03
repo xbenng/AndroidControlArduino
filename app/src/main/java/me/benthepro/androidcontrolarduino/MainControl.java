@@ -1,6 +1,10 @@
 package me.benthepro.androidcontrolarduino;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -16,73 +20,67 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-//TODO add saving setup
+//TODO future: add saving setup
 public class MainControl extends ActionBarActivity {
 
     public TextView text;
-    public Button upButtonLeft;
-    public Button downButtonLeft;
-    public Button upButtonRight;
-    public Button downButtonRight;
     public Button updateAddress;
 
     public EditText addressField;
     public EditText portField;
 
-    public EditText upPinLeft;
-    public EditText downPinLeft;
-    public EditText upPinRight;
-    public EditText downPinRight;
-
-    public Button addButton;
     public ArrayList pinControls = new ArrayList();
 
     public int PORT;
     public String ADDRESS;
 
-    Socket socket = null;
-
+    final Context context = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_control);
 
-        final Context context = this;
+
+
 
         text = (TextView) findViewById(R.id.textView);
 
         addressField = (EditText) findViewById(R.id.address);
         portField = (EditText) findViewById(R.id.port);
 
-        upPinLeft = (EditText) findViewById(R.id.upPinLeft);
-        downPinLeft = (EditText) findViewById(R.id.downPinLeft);
-        upPinRight= (EditText) findViewById(R.id.upPinRight);
-        downPinRight = (EditText) findViewById(R.id.downPinRight);
-
-        upButtonLeft = (Button) findViewById(R.id.upButtonLeft);
-        downButtonLeft = (Button) findViewById(R.id.downButtonLeft);
-        upButtonRight = (Button) findViewById(R.id.upButtonRight);
-        downButtonRight = (Button) findViewById(R.id.downButtonRight);
-
         updateAddress = (Button) findViewById(R.id.updateAddress);
-        addButton = (Button) findViewById(R.id.button);
 
-        setAddress();
-        //TODO add ability to choose button background, and draggable layout
-
-        addButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pinControls.add(new PinControl(pinControls.size()+1,context));
+       /*TODO make into a class:
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+// Add the buttons
+        builder.setPositiveButton("hi", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
             }
         });
+        builder.setNegativeButton("bye", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog
+            }
+        });
+
+
+// Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+       /////////*/
+
+        setAddress();
+        //TODO future: add ability to choose button background, and draggable layout
+
         updateAddress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -90,54 +88,8 @@ public class MainControl extends ActionBarActivity {
             }
         });
 
-        upButtonLeft.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    new ClientTask(ADDRESS, PORT, upPinLeft.getText().toString() + ",1").execute(); //pin, state
-                }
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    new ClientTask(ADDRESS,PORT, upPinLeft.getText().toString() + ",0").execute(); //pin, state
-                }
-                return false;
-            }
-        });
-        downButtonLeft.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    new ClientTask(ADDRESS,PORT, downPinLeft.getText().toString() + ",1").execute(); //pin, state
-                }
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    new ClientTask(ADDRESS,PORT, downPinLeft.getText().toString() + ",0").execute(); //pin, state
-                }
-                return false;
-            }
-        });
-        upButtonRight.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    new ClientTask(ADDRESS,PORT, upPinRight.getText().toString() + ",1").execute(); //pin, state
-                }
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    new ClientTask(ADDRESS,PORT, upPinRight.getText().toString() + ",0").execute(); //pin, state
-                }
-                return false;
-            }
-        });
-        downButtonRight.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    new ClientTask(ADDRESS,PORT, downPinRight.getText().toString() + ",1").execute(); //pin, state
-                }
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    new ClientTask(ADDRESS,PORT, downPinRight.getText().toString() + ",0").execute(); //pin, state
-                }
-                return false;
-            }
-        });
+        pinControls.add(new PinControl(pinControls.size()+1,context));
+
 
 
     }
@@ -146,6 +98,7 @@ public class MainControl extends ActionBarActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main_control, menu);
+
         return true;
     }
     @Override
@@ -157,6 +110,10 @@ public class MainControl extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            return true;
+        }
+        if (id == R.id.addButtonAction){
+            pinControls.add(new PinControl(pinControls.size()+1,context));
             return true;
         }
 
@@ -172,54 +129,55 @@ public class MainControl extends ActionBarActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
-
-    public class ClientTask extends AsyncTask<Void, Void, Void> {
+    public class arduinoRequest extends AsyncTask<Void, Void, Void> {
 
         String dstAddress;
         int dstPort;
         String response = "";
         String message;
+        Socket socket = null;
+        Boolean toggle = false;
+        int pinToSwitch;
 
-        ClientTask(String addr, int port, String message){
+
+        arduinoRequest(String addr, int port, int pinToSwitch, Boolean toggle){
+            dstAddress = addr;
+            dstPort = port;
+            this.toggle = toggle;
+            this.pinToSwitch = pinToSwitch;
+        }
+        arduinoRequest(String addr, int port, String message){
             dstAddress = addr;
             dstPort = port;
             this.message = message;
+            //todo fix this method
         }
-
         @Override
         protected Void doInBackground(Void... arg0) {
 
 
             try {
-                socket = new Socket(dstAddress, dstPort);
+                socket = new Socket();
+                socket.connect(new InetSocketAddress(dstAddress,dstPort),1000);
                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                out.println(message);
                 //ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
                 //byte[] buffer = new byte[1024];
 
                 //int bytesRead;
-                //InputStream inputStream = socket.getInputStream();
-
-    /*
-     * notice:
-     * inputStream.read() will block if no data return
-     */
-                //thisshitreads forever
-                /*while ((bytesRead = inputStream.read(buffer)) != -1){
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                    response += byteArrayOutputStream.toString("UTF-8");
-                    System.out.println("Here." + response);
-                }*/
-
-                //read once and stop task
-                //ledState = inputStream.read();
+                if (toggle) {
+                    InputStream inputStream = socket.getInputStream();
+                    out.println(pinToSwitch + ",2");
+                    if (inputStream.read() == '0') {
+                        out.println(pinToSwitch + ",1");
+                    } else {
+                        out.println(pinToSwitch + ",0");
+                    }
+                } else {
+                    out.println(message);
+                    //handle other method
+                }
 
                 //byteArrayOutputStream.write(buffer, 0, bytesRead);
                 //response += byteArrayOutputStream.toString("UTF-8");
@@ -253,13 +211,17 @@ public class MainControl extends ActionBarActivity {
 
     public class PinControl {
         Button pinButton;
+        Button deleteButton;
         EditText pinField;
         ToggleButton toggle;
+        TableLayout table = (TableLayout) findViewById(R.id.table);
+        PinControl pinControl = this;
+
         //TextView label;
 
-        PinControl(int ID, Context context){
+        PinControl(final int ID, Context context){
 
-            TableRow tr = new TableRow(context);
+            final TableRow tr = new TableRow(context);
             tr.setLayoutParams(new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
 
             /*//initialize label
@@ -274,48 +236,57 @@ public class MainControl extends ActionBarActivity {
 
             //initialize field
             pinField = new EditText(context);
-            //pinField.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
             pinField.setText(String.valueOf(ID));
             pinField.setInputType(InputType.TYPE_CLASS_NUMBER);
 
             toggle = new ToggleButton(context);
             toggle.setText("Toggle Pin");
+            toggle.setTextOn("Toggle Pin");
+            toggle.setTextOff("Toggle Pin");
+
+            deleteButton = new Button(context);
+            deleteButton.setBackgroundResource(R.drawable.ic_action_cancel);
 
             //add to row
             tr.addView(pinButton);
             tr.addView(pinField);
             tr.addView(toggle);
+            tr.addView(deleteButton);
 
             //add row to table
-            TableLayout table = (TableLayout) findViewById(R.id.table);
             table.addView(tr);
 
-
+            deleteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    table.removeView(tr);
+                    pinControls.remove(pinControl);
+                }
+            });
 
             pinButton.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (toggle.isChecked()) {
-                        //TODO get pin state and switch it
                         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                            ClientTask request = new ClientTask(ADDRESS,PORT, pinButton.getText().toString() + ",?");
-                            request.execute();
-                            //request.response;
+                            new arduinoRequest(ADDRESS,PORT,Integer.parseInt(pinField.getText().toString()),true).execute();
                         }
                     } else {
                        //send switch on, on down
                        //send switch off, on up
                         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                            new ClientTask(ADDRESS,PORT, pinButton.getText().toString() + ",1").execute(); //pin, state
+                            new arduinoRequest(ADDRESS,PORT, pinField.getText().toString() + ",1").execute(); //pin, state
+                        } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                            new arduinoRequest(ADDRESS,PORT, pinField.getText().toString() + ",0").execute(); //pin, state
                         }
-                        if (event.getAction() == MotionEvent.ACTION_UP) {
-                            new ClientTask(ADDRESS,PORT, pinButton.getText().toString() + ",0").execute(); //pin, state
-                        }
-                        System.out.println("here");
                     }
                     return false;
                 }
             });
+
+
         }
     }
+//todo fill this
+
 }
