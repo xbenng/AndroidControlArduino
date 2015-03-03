@@ -83,13 +83,22 @@ void loop() // poll for data
       esp.find(":");  //skip length
       
       Serial.println("got data");
-  
+
       int pinToSwitch = esp.parseInt();
       int state = esp.parseInt();
-      
-      Serial.println(pinToSwitch);
-      Serial.println(state);
-      digitalWrite(pinToSwitch,state);
+      if (state == 0 || state == 1){  //change state
+        Serial.println(pinToSwitch);
+        Serial.println(state);
+        digitalWrite(pinToSwitch,state);
+      } else {  //tell state
+        while(!esp.find(">")){
+           //wait until esp is ready to send
+           esp.print(AT+CIPSEND=);
+           esp.print(id);
+           esp.print(",1");
+        }
+        esp.print(digitalRead(pinToSwitch));  //send state
+      }
 
       //esp.println("AT+CIPCLOSE=");
       //esp.println(id);

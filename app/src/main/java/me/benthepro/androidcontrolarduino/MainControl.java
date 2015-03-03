@@ -1,22 +1,27 @@
 package me.benthepro.androidcontrolarduino;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
-
+import android.widget.ToggleButton;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
-
+//TODO add saving setup
 public class MainControl extends ActionBarActivity {
 
     public TextView text;
@@ -34,6 +39,9 @@ public class MainControl extends ActionBarActivity {
     public EditText upPinRight;
     public EditText downPinRight;
 
+    public Button addButton;
+    public ArrayList pinControls = new ArrayList();
+
     public int PORT;
     public String ADDRESS;
 
@@ -42,8 +50,11 @@ public class MainControl extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_control);
+
+        final Context context = this;
 
         text = (TextView) findViewById(R.id.textView);
 
@@ -61,10 +72,17 @@ public class MainControl extends ActionBarActivity {
         downButtonRight = (Button) findViewById(R.id.downButtonRight);
 
         updateAddress = (Button) findViewById(R.id.updateAddress);
+        addButton = (Button) findViewById(R.id.button);
 
         setAddress();
+        //TODO add ability to choose button background, and draggable layout
 
-
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pinControls.add(new PinControl(pinControls.size()+1,context));
+            }
+        });
         updateAddress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -161,6 +179,7 @@ public class MainControl extends ActionBarActivity {
         }
     }
 
+
     public class ClientTask extends AsyncTask<Void, Void, Void> {
 
         String dstAddress;
@@ -230,5 +249,73 @@ public class MainControl extends ActionBarActivity {
             super.onPostExecute(result);
         }
 
+    }
+
+    public class PinControl {
+        Button pinButton;
+        EditText pinField;
+        ToggleButton toggle;
+        //TextView label;
+
+        PinControl(int ID, Context context){
+
+            TableRow tr = new TableRow(context);
+            tr.setLayoutParams(new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT, TableLayout.LayoutParams.WRAP_CONTENT));
+
+            /*//initialize label
+            label = new TextView(context);
+            label.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+            label.setText("pin control");*/
+
+            //initialize button
+            pinButton = new Button(context);
+            //pinButton.setLayoutParams(new TableLayout.LayoutParams(TableLayout.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
+            pinButton.setText(Integer.toString(ID));
+
+            //initialize field
+            pinField = new EditText(context);
+            //pinField.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
+            pinField.setText(String.valueOf(ID));
+            pinField.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+            toggle = new ToggleButton(context);
+            toggle.setText("Toggle Pin");
+
+            //add to row
+            tr.addView(pinButton);
+            tr.addView(pinField);
+            tr.addView(toggle);
+
+            //add row to table
+            TableLayout table = (TableLayout) findViewById(R.id.table);
+            table.addView(tr);
+
+
+
+            pinButton.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if (toggle.isChecked()) {
+                        //TODO get pin state and switch it
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            ClientTask request = new ClientTask(ADDRESS,PORT, pinButton.getText().toString() + ",?");
+                            request.execute();
+                            //request.response;
+                        }
+                    } else {
+                       //send switch on, on down
+                       //send switch off, on up
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            new ClientTask(ADDRESS,PORT, pinButton.getText().toString() + ",1").execute(); //pin, state
+                        }
+                        if (event.getAction() == MotionEvent.ACTION_UP) {
+                            new ClientTask(ADDRESS,PORT, pinButton.getText().toString() + ",0").execute(); //pin, state
+                        }
+                        System.out.println("here");
+                    }
+                    return false;
+                }
+            });
+        }
     }
 }
